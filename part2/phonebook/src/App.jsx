@@ -5,6 +5,7 @@ import SearchResult from './components/searchResult'
 import AddContactForm from './components/addContactForm'
 import FilterForm from './components/filterForm'
 import axios from 'axios'
+import contactService from './services/contacts'
 
 const App = () => {
   const [persons, setPersons] = useState([])
@@ -26,11 +27,13 @@ const App = () => {
 
   useEffect(() => {
     console.log('effect')
-    axios
-      .get('http://localhost:3001/persons')
-      .then(response => {
-        console.log('promise fulfilled')
-        setPersons(response.data)
+    contactService
+      .getAll()
+      .then(initialContacts => {
+        setPersons(initialContacts)
+      })
+      .catch(error => {
+        console.log(error)
       })
   }, [])
 
@@ -38,7 +41,8 @@ const App = () => {
     event.preventDefault()
     const contactObject = {
       name: newName,
-      number: newNumber
+      number: newNumber,
+      id: `${persons.length + 1}`
     }
 
     if (persons.some(person => person.name === newName)) {
@@ -46,9 +50,25 @@ const App = () => {
       return
     }
 
-    setPersons(persons.concat(contactObject))
+    contactService
+      .create(contactObject)
+      .then(createdContact => {
+        setPersons(persons.concat(createdContact))
+      })
     setNewName('')
     setNewNumber('')
+  }
+
+  const delContact = (id) => {
+    const found = persons.find(person => person.id === id)
+    if (window.confirm(`Delete ${found.name}`)) {
+      contactService
+        .del(id)
+        .then(() => {
+          alert(`${found.name} was deleted`)
+          setPersons(persons.filter(person => person.id !== id))
+        })
+    }
   }
 
   const filteredPersons = () => {
@@ -75,7 +95,7 @@ const App = () => {
         addName={addName}
       />
       <h2>Numbers</h2>
-      <Contact persons={persons}/>
+      <Contact persons={persons} delContact={delContact}/>
       <h2>Search result:</h2>
       <SearchResult matchContacts={filteredPersons()}/>
     </div>
