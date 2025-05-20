@@ -6,12 +6,15 @@ import AddContactForm from './components/addContactForm'
 import FilterForm from './components/filterForm'
 import axios from 'axios'
 import contactService from './services/contacts'
+import Notification from './components/notification'
 
 const App = () => {
   const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [pair, setPair] = useState('')
+  const [notif, setNotif] = useState(null)
+  const [fail, setFail] = useState(false)
 
   const handleNameChange = (event) => {
     setNewName(event.target.value)
@@ -68,6 +71,14 @@ const App = () => {
       .create(contactObject)
       .then(createdContact => {
         setPersons(persons.concat(createdContact))
+        setNotif(`${createdContact.name} was succesfully added to phonebook`)
+        setFail(false)
+        setTimeout(() => {
+          setNotif(null)
+        }, 5000)
+      })
+      .catch(error => {
+        console.log(error)
       })
     setNewName('')
     setNewNumber('')
@@ -82,6 +93,15 @@ const App = () => {
           alert(`${found.name} was deleted`)
           setPersons(persons.filter(person => person.id !== id))
         })
+        .catch(error => {
+          setNotif(`Error: ${found.name} was already deleted`)
+          setFail(true)
+          setTimeout(() => {
+            setNotif(null)
+          }, 5000)
+        })
+      setNewName('')
+      setNewNumber('')
     }
   }
 
@@ -101,6 +121,7 @@ const App = () => {
       <h2>Phonebook</h2>
       <FilterForm pair={pair} handleFilter={handleFilter}/>
       <h2>Add new contact</h2>
+      <Notification message={notif} err={fail}/>
       <AddContactForm 
         newName={newName}
         handleNameChange={handleNameChange}
